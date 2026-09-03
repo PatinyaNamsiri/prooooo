@@ -58,7 +58,7 @@ async function syncCurrentUser(session) {
 
     let { data: profile } = await _supabase
         .from('profiles')
-        .select('display_name, role, bio, avatar_url')
+        .select('display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
         .eq('id', session.user.id)
         .maybeSingle();
 
@@ -71,12 +71,16 @@ async function syncCurrentUser(session) {
             display_name: meta.display_name || emailForProfile.split('@')[0] || 'ผู้ใช้',
             role: meta.role === 'seller' ? 'seller' : 'buyer',
             bio: '',
-            avatar_url: ''
+            avatar_url: '',
+            instagram: '',
+            facebook: '',
+            line_id: '',
+            phone: ''
         };
         const { data: createdProfile } = await _supabase
             .from('profiles')
             .upsert(fallbackProfile, { onConflict: 'id' })
-            .select('display_name, role, bio, avatar_url')
+            .select('display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
             .maybeSingle();
         profile = createdProfile || fallbackProfile;
     }
@@ -309,7 +313,7 @@ async function fetchPosts() {
     if (sellerIds.length) {
         const { data: profiles } = await _supabase
             .from('profiles')
-            .select('id, display_name, role, bio, avatar_url')
+            .select('id, display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
             .in('id', sellerIds);
 
         (profiles || []).forEach(p => profileCache[p.id] = p);
@@ -360,7 +364,7 @@ function renderPosts(postsToRender) {
         const sellLabel = isTicket ? 'ปล่อยเหมา:' : 'ราคาปล่อยต่อ:';
         const sellColor = isTicket ? 'text-purple-400' : 'text-amber-400';
 
-        const timeDisplay = post.date ? new Date(`${post.date}T00:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : timeAgo(post.created_at);
+        const timeDisplay = post.date ? new Date(`${post.date}T00:00:00`).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : timeAgo(post.created_at);
 
         container.innerHTML += `
             <div class="card-item glass-card rounded-2xl border border-slate-800 overflow-hidden card-hover flex flex-col justify-between bg-slate-900/90" data-category="${post.type}" data-title="${post.title || ''}">
@@ -608,7 +612,7 @@ function openDetailModalByData(index) {
     const isTicket = post.type === 'ticket' || post.type === 'บัตรคอนเสิร์ต';
 
     setEl('mName', post.title);
-    const eventDate = post.date ? new Date(`${post.date}T00:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+    const eventDate = post.date ? new Date(`${post.date}T00:00:00`).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
     setEl('mZoneDate', `📍 ${post.zone || 'ไม่ระบุพิกัด'} • ${eventDate}`);
     setEl('mSeats', post.seat_info || (isTicket ? 'บัตรคอนเสิร์ต' : 'โต๊ะร้านอาหาร'));
     setEl('mTime', post.time || 'ตามตกลง');
@@ -658,7 +662,11 @@ async function openMyProfile() {
             display_name: currentUser.name || 'ผู้ใช้',
             role: currentUser.role || 'buyer',
             bio: '',
-            avatar_url: ''
+            avatar_url: '',
+            instagram: '',
+            facebook: '',
+            line_id: '',
+            phone: ''
         };
     }
 
@@ -677,7 +685,7 @@ async function openSellerProfile(sellerId) {
     if (!profile) {
         const { data, error } = await _supabase
             .from('profiles')
-            .select('id, display_name, role, bio, avatar_url')
+            .select('id, display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
             .eq('id', sellerId)
             .maybeSingle();
 
@@ -738,6 +746,17 @@ async function openSellerProfile(sellerId) {
         </div>
 
         <p id="profileBioText" class="text-sm text-slate-400 mt-5">${escapeHtml(profile.bio || 'ยังไม่มีคำแนะนำตัว')}</p>
+
+        <div class="mt-5 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+            <h3 class="text-sm font-bold text-white">📞 ช่องทางติดต่อ</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                ${profile.instagram ? `<a href="https://instagram.com/${encodeURIComponent(profile.instagram.replace(/^@/, ''))}" target="_blank" rel="noopener" class="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-pink-500/50 transition"><div class="text-[10px] text-slate-500">Instagram</div><div class="text-xs text-white mt-1 truncate">@${escapeHtml(profile.instagram.replace(/^@/, ''))}</div></a>` : ''}
+                ${profile.facebook ? `<a href="${/^https?:\/\//i.test(profile.facebook) ? escapeHtml(profile.facebook) : 'https://facebook.com/' + encodeURIComponent(profile.facebook)}" target="_blank" rel="noopener" class="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition"><div class="text-[10px] text-slate-500">Facebook</div><div class="text-xs text-white mt-1 truncate">${escapeHtml(profile.facebook)}</div></a>` : ''}
+                ${profile.line_id ? `<div class="p-3 rounded-xl bg-slate-900 border border-slate-800"><div class="text-[10px] text-slate-500">LINE ID</div><div class="text-xs text-white mt-1 truncate">${escapeHtml(profile.line_id)}</div></div>` : ''}
+                ${profile.phone ? `<a href="tel:${escapeHtml(profile.phone)}" class="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 transition"><div class="text-[10px] text-slate-500">เบอร์โทรศัพท์</div><div class="text-xs text-white mt-1 truncate">${escapeHtml(profile.phone)}</div></a>` : ''}
+            </div>
+            ${!profile.instagram && !profile.facebook && !profile.line_id && !profile.phone ? '<p class="text-xs text-slate-500 mt-2">ยังไม่ได้เพิ่มช่องทางติดต่อ</p>' : ''}
+        </div>
         ${currentUser?.id === sellerId ? `
         <div class="mt-4">
             <button id="editProfileBtn" onclick="toggleProfileEdit()" class="w-full border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs py-2.5 rounded-xl transition">✏️ แก้ไขโปรไฟล์</button>
@@ -749,6 +768,24 @@ async function openSellerProfile(sellerId) {
                 <label class="block text-[11px] text-slate-400 mt-3 mb-1">แนะนำตัว</label>
                 <textarea id="editProfileBio" rows="3" maxlength="300" placeholder="แนะนำตัวเกี่ยวกับคุณ"
                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">${escapeHtml(profile.bio || '')}</textarea>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mt-3 mb-1">Instagram</label>
+                        <input id="editProfileInstagram" value="${escapeHtml(profile.instagram || '')}" maxlength="80" placeholder="เช่น patinya_na" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mt-3 mb-1">Facebook</label>
+                        <input id="editProfileFacebook" value="${escapeHtml(profile.facebook || '')}" maxlength="200" placeholder="ชื่อหรือ URL Facebook" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mt-3 mb-1">LINE ID</label>
+                        <input id="editProfileLine" value="${escapeHtml(profile.line_id || '')}" maxlength="80" placeholder="เช่น patinya123" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mt-3 mb-1">เบอร์โทรศัพท์</label>
+                        <input id="editProfilePhone" value="${escapeHtml(profile.phone || '')}" maxlength="30" inputmode="tel" placeholder="เช่น 08x-xxx-xxxx" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
+                    </div>
+                </div>
                 <div class="flex gap-2 mt-3">
                     <button onclick="saveMyProfile()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl">บันทึก</button>
                     <button onclick="toggleProfileEdit(false)" class="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs py-2.5 rounded-xl">ยกเลิก</button>
@@ -817,12 +854,16 @@ async function saveMyProfile() {
     if (!currentUser || !_supabase) return;
     const display_name = document.getElementById('editProfileName')?.value.trim();
     const bio = document.getElementById('editProfileBio')?.value.trim();
+    const instagram = document.getElementById('editProfileInstagram')?.value.trim();
+    const facebook = document.getElementById('editProfileFacebook')?.value.trim();
+    const line_id = document.getElementById('editProfileLine')?.value.trim();
+    const phone = document.getElementById('editProfilePhone')?.value.trim();
 
     if (!display_name) return alert('กรุณากรอกชื่อที่แสดง');
 
     const { error } = await _supabase
         .from('profiles')
-        .update({ display_name, bio })
+        .update({ display_name, bio, instagram, facebook, line_id, phone })
         .eq('id', currentUser.id);
 
     if (error) return alert('บันทึกโปรไฟล์ไม่สำเร็จ: ' + error.message);
@@ -831,6 +872,10 @@ async function saveMyProfile() {
     if (profileCache[currentUser.id]) {
         profileCache[currentUser.id].display_name = display_name;
         profileCache[currentUser.id].bio = bio;
+        profileCache[currentUser.id].instagram = instagram;
+        profileCache[currentUser.id].facebook = facebook;
+        profileCache[currentUser.id].line_id = line_id;
+        profileCache[currentUser.id].phone = phone;
     }
     updateAuthUI();
     alert('บันทึกโปรไฟล์เรียบร้อยแล้ว');
@@ -882,7 +927,7 @@ function formatThaiDate(dateString) {
     if (!dateString) return '-';
     const d = new Date(`${dateString}T00:00:00`);
     if (Number.isNaN(d.getTime())) return dateString;
-    return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function ensureEditPostModal() {
