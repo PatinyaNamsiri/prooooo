@@ -360,7 +360,7 @@ function renderPosts(postsToRender) {
         const sellLabel = isTicket ? 'ปล่อยเหมา:' : 'ราคาปล่อยต่อ:';
         const sellColor = isTicket ? 'text-purple-400' : 'text-amber-400';
 
-        const timeDisplay = timeAgo(post.created_at);
+        const timeDisplay = post.date ? new Date(`${post.date}T00:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : timeAgo(post.created_at);
 
         container.innerHTML += `
             <div class="card-item glass-card rounded-2xl border border-slate-800 overflow-hidden card-hover flex flex-col justify-between bg-slate-900/90" data-category="${post.type}" data-title="${post.title || ''}">
@@ -405,28 +405,29 @@ function renderPosts(postsToRender) {
 
                 <div class="p-4 bg-slate-950/40 border-t border-slate-800/60 flex items-center justify-between gap-3">
                     ${(() => {
-                        // ถ้าประกาศเก่าที่ยังไม่มี seller_id ให้ใช้โปรไฟล์ที่กำลัง Login
-                        // ส่วนประกาศใหม่ที่มี seller_id ให้ใช้โปรไฟล์เจ้าของประกาศจริง
-                        const sellerProfile = profileCache[post.seller_id] || (!post.seller_id && currentUser ? {
-                            id: currentUser.id,
-                            display_name: currentUser.name,
-                            role: currentUser.role,
-                            avatar_url: currentUser.avatar_url
-                        } : null);
-                        const sellerId = sellerProfile?.id || post.seller_id || '';
-                        const sellerName = sellerProfile?.display_name || post.contact || 'ผู้ลงประกาศ';
+                        const sellerId = post.seller_id || '';
+                        const sellerProfile = sellerId ? profileCache[sellerId] : null;
+                        const sellerName = sellerProfile?.display_name || 'โปรไฟล์ผู้ลงประกาศ';
                         const initial = sellerName.charAt(0).toUpperCase();
                         const badge = sellerProfile?.role === 'seller' ? '🟢 KKU Verified Seller' : '👤 โปรไฟล์ผู้ใช้';
-                        return `
-                    <button onclick="openSellerProfile('${sellerId}')" class="flex items-center space-x-2 text-left min-w-0 hover:opacity-80 transition">
-                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300 border border-slate-700 shrink-0">
+                        return sellerId ? `
+                    <button onclick="openSellerProfile('${sellerId}')" class="flex items-center gap-2 text-left min-w-0 hover:opacity-80 transition group">
+                        <div class="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center text-xs font-bold text-orange-400 border border-slate-700 shrink-0">
                             ${escapeHtml(initial)}
                         </div>
                         <div class="min-w-0">
-                            <span class="text-xs text-slate-200 font-semibold block truncate">${escapeHtml(sellerName)}</span>
-                            <span class="text-[10px] ${sellerProfile ? 'text-emerald-400' : 'text-slate-500'} block">${badge}</span>
+                            <span class="text-[10px] text-slate-500 block">ผู้ลงประกาศ</span>
+                            <span class="text-xs text-slate-100 font-semibold block truncate group-hover:text-amber-400 transition">${escapeHtml(sellerName)}</span>
+                            <span class="text-[10px] text-emerald-400 block">${badge}</span>
                         </div>
-                    </button>`;
+                    </button>` : `
+                    <div class="flex items-center gap-2 text-left min-w-0">
+                        <div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-700 shrink-0">?</div>
+                        <div class="min-w-0">
+                            <span class="text-[10px] text-slate-500 block">ผู้ลงประกาศ</span>
+                            <span class="text-xs text-slate-500 block">ยังไม่มีข้อมูลโปรไฟล์</span>
+                        </div>
+                    </div>`;
                     })()}
                     <div class="text-right shrink-0">
                         <div class="text-[11px] text-amber-300">${getSellerRatingText(post.seller_id)}</div>
@@ -464,7 +465,8 @@ async function handleSellSubmit(event) {
     const title = document.getElementById('fTitle')?.value;
     const original_price = document.getElementById('fRealPrice')?.value || document.getElementById('fOriginalPrice')?.value; 
     const price = document.getElementById('fSellPrice')?.value;
-    const contact = document.getElementById('fContact')?.value || currentUser.name;
+    const date = document.getElementById('fDate')?.value || null;
+    const time = document.getElementById('fTime')?.value?.trim() || '';
     const type = document.getElementById('fCategory')?.value || 'table';
     const zone = document.getElementById('fZone')?.value;
     const note = document.getElementById('fNote')?.value;
@@ -482,8 +484,9 @@ async function handleSellSubmit(event) {
             .insert([{ 
                 title, 
                 original_price: original_price ? Number(original_price) : null,
-                price: Number(price), 
-                contact, 
+                price: Number(price),
+                date,
+                time,
                 type, 
                 zone,
                 note,
@@ -605,13 +608,14 @@ function openDetailModalByData(index) {
     const isTicket = post.type === 'ticket' || post.type === 'บัตรคอนเสิร์ต';
 
     setEl('mName', post.title);
-    setEl('mZoneDate', `📍 ${post.zone || 'ไม่ระบุพิกัด'}`);
+    const eventDate = post.date ? new Date(`${post.date}T00:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+    setEl('mZoneDate', `📍 ${post.zone || 'ไม่ระบุพิกัด'} • ${eventDate}`);
     setEl('mSeats', post.seat_info || (isTicket ? 'บัตรคอนเสิร์ต' : 'โต๊ะร้านอาหาร'));
-    setEl('mTime', 'ตามตกลง');
+    setEl('mTime', post.time || 'ตามตกลง');
     setEl('mRealPrice', post.original_price ? `฿${post.original_price}` : '-');
     setEl('mSellPrice', `฿${post.price || 0}`);
     
-    const noteText = post.note ? `หมายเหตุ: ${post.note}\nติดต่อ: ${post.contact || '-'}` : `ติดต่อ: ${post.contact || '-'}`;
+    const noteText = post.note ? `หมายเหตุ: ${post.note}` : 'ไม่มีรายละเอียดเพิ่มเติม';
     setEl('mNote', noteText);
 
     openModal('detailModal');
@@ -721,13 +725,47 @@ async function openSellerProfile(sellerId) {
 
         <p id="profileBioText" class="text-sm text-slate-400 mt-5">${escapeHtml(profile.bio || 'ยังไม่มีคำแนะนำตัว')}</p>
         ${currentUser?.id === sellerId ? `
-        <div class="mt-4 p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-            <h3 class="text-sm font-bold text-white">แก้ไขโปรไฟล์</h3>
-            <input id="editProfileName" value="${escapeHtml(profile.display_name || '')}" maxlength="80" placeholder="ชื่อที่แสดง"
-                class="w-full mt-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
-            <textarea id="editProfileBio" rows="2" maxlength="300" placeholder="แนะนำตัว"
-                class="w-full mt-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">${escapeHtml(profile.bio || '')}</textarea>
-            <button onclick="saveMyProfile()" class="w-full mt-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-2.5 rounded-xl">บันทึกโปรไฟล์</button>
+        <div class="mt-4">
+            <button id="editProfileBtn" onclick="toggleProfileEdit()" class="w-full border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs py-2.5 rounded-xl transition">✏️ แก้ไขโปรไฟล์</button>
+            <div id="editProfilePanel" class="hidden mt-3 p-4 rounded-xl bg-slate-950/70 border border-slate-800">
+                <h3 class="text-sm font-bold text-white">แก้ไขข้อมูลโปรไฟล์</h3>
+                <label class="block text-[11px] text-slate-400 mt-3 mb-1">ชื่อที่แสดง</label>
+                <input id="editProfileName" value="${escapeHtml(profile.display_name || '')}" maxlength="80" placeholder="ชื่อที่แสดง"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
+                <label class="block text-[11px] text-slate-400 mt-3 mb-1">แนะนำตัว</label>
+                <textarea id="editProfileBio" rows="3" maxlength="300" placeholder="แนะนำตัวเกี่ยวกับคุณ"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">${escapeHtml(profile.bio || '')}</textarea>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="saveMyProfile()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl">บันทึก</button>
+                    <button onclick="toggleProfileEdit(false)" class="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs py-2.5 rounded-xl">ยกเลิก</button>
+                </div>
+            </div>
+        </div>` : ''}
+
+        ${currentUser?.id === sellerId ? `
+        <div class="mt-5">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-bold text-white">📦 ประกาศของฉัน</h3>
+                <span class="text-[10px] text-slate-500">${allPosts.filter(p => p.seller_id === sellerId).length} รายการ</span>
+            </div>
+            <div class="space-y-2">
+                ${(() => {
+                    const mine = allPosts.filter(p => p.seller_id === sellerId);
+                    if (!mine.length) return '<div class="text-center text-xs text-slate-500 py-5 bg-slate-950/50 rounded-xl border border-slate-800">ยังไม่มีประกาศของคุณ</div>';
+                    return mine.map(post => `
+                        <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-white truncate">${escapeHtml(post.title || 'ไม่มีชื่อรายการ')}</p>
+                                <p class="text-[10px] text-slate-500 mt-1">${post.date ? formatThaiDate(post.date) : 'ไม่ระบุวันที่'} • ฿${post.price || 0}</p>
+                            </div>
+                            <div class="flex gap-1.5 shrink-0">
+                                <button onclick="openEditPost(${Number(post.id)})" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition">✏️ แก้ไข</button>
+                                <button onclick="deleteMyPost(${Number(post.id)})" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-red-300 bg-red-500/10 border border-red-500/30 hover:bg-red-500 hover:text-white transition">🗑️ ลบ</button>
+                            </div>
+                        </div>
+                    `).join('');
+                })()}
+            </div>
         </div>` : ''}
 
         ${canReview && isKkuSeller ? `
@@ -752,6 +790,15 @@ async function openSellerProfile(sellerId) {
     openModal('profileModal');
 }
 
+function toggleProfileEdit(force) {
+    const panel = document.getElementById('editProfilePanel');
+    const btn = document.getElementById('editProfileBtn');
+    if (!panel) return;
+    const show = typeof force === 'boolean' ? force : panel.classList.contains('hidden');
+    panel.classList.toggle('hidden', !show);
+    if (btn) btn.textContent = show ? '✕ ปิดการแก้ไข' : '✏️ แก้ไขโปรไฟล์';
+}
+
 async function saveMyProfile() {
     if (!currentUser || !_supabase) return;
     const display_name = document.getElementById('editProfileName')?.value.trim();
@@ -767,6 +814,10 @@ async function saveMyProfile() {
     if (error) return alert('บันทึกโปรไฟล์ไม่สำเร็จ: ' + error.message);
 
     currentUser.name = display_name;
+    if (profileCache[currentUser.id]) {
+        profileCache[currentUser.id].display_name = display_name;
+        profileCache[currentUser.id].bio = bio;
+    }
     updateAuthUI();
     alert('บันทึกโปรไฟล์เรียบร้อยแล้ว');
     await openSellerProfile(currentUser.id);
@@ -811,6 +862,157 @@ async function submitReview(sellerId, reviewId) {
     closeModal('profileModal');
     await fetchPosts();
     await openSellerProfile(sellerId);
+}
+
+function formatThaiDate(dateString) {
+    if (!dateString) return '-';
+    const d = new Date(`${dateString}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return dateString;
+    return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function ensureEditPostModal() {
+    if (document.getElementById('editPostModal')) return;
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="editPostModal" class="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+            <div class="glass-card border border-slate-700/80 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden shadow-2xl">
+                <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-base font-bold text-white">✏️ แก้ไขประกาศ</h3>
+                        <p class="text-[10px] text-slate-500 mt-1">แก้ไขข้อมูลประกาศของคุณได้ที่นี่</p>
+                    </div>
+                    <button onclick="closeModal('editPostModal')" class="text-slate-400 hover:text-white text-4xl font-bold">&times;</button>
+                </div>
+                <form id="editPostForm" class="p-5 space-y-3.5 max-h-[75vh] overflow-y-auto" onsubmit="saveEditedPost(event)"></form>
+            </div>
+        </div>`);
+}
+
+function openEditPost(postId) {
+    if (!currentUser) return openAuthModal('login');
+    const post = allPosts.find(p => Number(p.id) === Number(postId));
+    if (!post) return alert('ไม่พบประกาศนี้');
+    if (post.seller_id !== currentUser.id) return alert('คุณไม่มีสิทธิ์แก้ไขประกาศนี้');
+
+    ensureEditPostModal();
+    const isTicket = post.type === 'ticket' || post.type === 'บัตรคอนเสิร์ต';
+    const form = document.getElementById('editPostForm');
+    form.innerHTML = `
+        <input type="hidden" id="editPostId" value="${Number(post.id)}">
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">หมวดหมู่</label>
+            <select id="editCategory" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                <option value="table" ${!isTicket ? 'selected' : ''}>🍽️ โต๊ะร้านอาหาร</option>
+                <option value="ticket" ${isTicket ? 'selected' : ''}>🎟️ บัตรคอนเสิร์ต</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อรายการ</label>
+            <input id="editTitle" required value="${escapeHtml(post.title || '')}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">URL รูปภาพ</label>
+            <input type="url" id="editImage" value="${escapeHtml(post.image_url || '')}" placeholder="https://example.com/image.jpg" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">พิกัด/สถานที่</label>
+                <input id="editZone" required value="${escapeHtml(post.zone || '')}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">วันที่</label>
+                <input type="date" id="editDate" required value="${escapeHtml(post.date || '')}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">${isTicket ? 'รายละเอียดโซน/บัตร' : 'จำนวนที่นั่ง'}</label>
+                <input id="editSeats" required value="${escapeHtml(post.seat_info || '')}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">${isTicket ? 'เวลาเริ่ม/ประตูเปิด' : 'เงื่อนไขเวลา'}</label>
+                <input id="editTime" required value="${escapeHtml(post.time || '')}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">ราคาเดิม (บาท)</label>
+                <input type="number" id="editOriginalPrice" min="0" value="${post.original_price ?? ''}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">ราคาปล่อยต่อ (บาท)</label>
+                <input type="number" id="editPrice" min="0" required value="${post.price ?? ''}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">รายละเอียดเพิ่มเติม</label>
+            <textarea id="editNote" rows="3" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-orange-500">${escapeHtml(post.note || '')}</textarea>
+        </div>
+        <div class="flex gap-2 pt-1">
+            <button type="button" onclick="closeModal('editPostModal')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs">ยกเลิก</button>
+            <button type="submit" class="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-2.5 rounded-xl text-xs">💾 บันทึกการแก้ไข</button>
+        </div>`;
+    openModal('editPostModal');
+}
+
+async function saveEditedPost(event) {
+    if (event) event.preventDefault();
+    if (!currentUser || !_supabase) return;
+
+    const postId = Number(document.getElementById('editPostId')?.value);
+    const post = allPosts.find(p => Number(p.id) === postId);
+    if (!post || post.seller_id !== currentUser.id) return alert('คุณไม่มีสิทธิ์แก้ไขประกาศนี้');
+
+    const payload = {
+        title: document.getElementById('editTitle')?.value.trim(),
+        type: document.getElementById('editCategory')?.value || 'table',
+        image_url: document.getElementById('editImage')?.value.trim() || null,
+        zone: document.getElementById('editZone')?.value.trim(),
+        date: document.getElementById('editDate')?.value || null,
+        seat_info: document.getElementById('editSeats')?.value.trim(),
+        time: document.getElementById('editTime')?.value.trim(),
+        original_price: document.getElementById('editOriginalPrice')?.value ? Number(document.getElementById('editOriginalPrice').value) : null,
+        price: Number(document.getElementById('editPrice')?.value || 0),
+        note: document.getElementById('editNote')?.value.trim()
+    };
+
+    if (!payload.title || !payload.price || !payload.zone || !payload.date) {
+        return alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบ');
+    }
+
+    const { error } = await _supabase
+        .from('posts')
+        .update(payload)
+        .eq('id', postId)
+        .eq('seller_id', currentUser.id);
+
+    if (error) return alert('แก้ไขประกาศไม่สำเร็จ: ' + error.message);
+
+    closeModal('editPostModal');
+    alert('✅ แก้ไขประกาศเรียบร้อยแล้ว');
+    await fetchPosts();
+    await openMyProfile();
+}
+
+async function deleteMyPost(postId) {
+    if (!currentUser || !_supabase) return;
+    const post = allPosts.find(p => Number(p.id) === Number(postId));
+    if (!post) return alert('ไม่พบประกาศนี้');
+    if (post.seller_id !== currentUser.id) return alert('คุณไม่มีสิทธิ์ลบประกาศนี้');
+
+    if (!confirm(`ต้องการลบประกาศ “${post.title || 'รายการนี้'}” ใช่หรือไม่?\n\nการลบไม่สามารถย้อนกลับได้`)) return;
+
+    const { error } = await _supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('seller_id', currentUser.id);
+
+    if (error) return alert('ลบประกาศไม่สำเร็จ: ' + error.message);
+
+    alert('🗑️ ลบประกาศเรียบร้อยแล้ว');
+    await fetchPosts();
+    await openMyProfile();
 }
 
 function escapeHtml(value) {
