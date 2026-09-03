@@ -592,19 +592,30 @@ async function openSellerProfile(sellerId) {
     if (!sellerId) return alert('ประกาศนี้ยังไม่มีข้อมูลผู้ขายที่เชื่อมกับบัญชี');
     if (!_supabase) return;
 
-    const { data: profile, error } = await _supabase
-        .from('profiles')
-        .select('id, display_name, role, bio, avatar_url')
-        .eq('id', sellerId)
-        .maybeSingle();
+    // ใช้ profile ที่ fetchPosts() โหลดไว้แล้วก่อน
+    // เพื่อไม่ให้เกิดกรณี query ซ้ำแล้วหา profile ไม่เจอ
+    let profile = profileCache[sellerId] || null;
 
-    if (error || !profile) return alert('ไม่พบโปรไฟล์ผู้ขาย');
+    // ถ้าไม่มีใน cache ค่อย fallback ไปดึงจาก Supabase
+    if (!profile) {
+        const { data, error } = await _supabase
+            .from('profiles')
+            .select('id, display_name, role, bio, avatar_url')
+            .eq('id', sellerId)
+            .maybeSingle();
 
-    const { data: sellerAuth } = await _supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', sellerId)
-        .maybeSingle();
+        if (error) {
+            console.error('openSellerProfile profile error:', error);
+            return alert('โหลดโปรไฟล์ผู้ขายไม่สำเร็จ');
+        }
+
+        profile = data;
+    }
+
+    if (!profile) {
+        console.error('ไม่พบ profile ของ seller_id:', sellerId);
+        return alert('ไม่พบโปรไฟล์ผู้ขาย');
+    }
 
     const { data: reviews } = await _supabase
         .from('reviews')
