@@ -404,17 +404,30 @@ function renderPosts(postsToRender) {
                 </div>
 
                 <div class="p-4 bg-slate-950/40 border-t border-slate-800/60 flex items-center justify-between gap-3">
-                    <button onclick="openSellerProfile('${post.seller_id || ''}')" class="flex items-center space-x-2 text-left min-w-0 hover:opacity-80 transition">
+                    ${(() => {
+                        // ถ้าประกาศเก่าที่ยังไม่มี seller_id ให้ใช้โปรไฟล์ที่กำลัง Login
+                        // ส่วนประกาศใหม่ที่มี seller_id ให้ใช้โปรไฟล์เจ้าของประกาศจริง
+                        const sellerProfile = profileCache[post.seller_id] || (!post.seller_id && currentUser ? {
+                            id: currentUser.id,
+                            display_name: currentUser.name,
+                            role: currentUser.role,
+                            avatar_url: currentUser.avatar_url
+                        } : null);
+                        const sellerId = sellerProfile?.id || post.seller_id || '';
+                        const sellerName = sellerProfile?.display_name || post.contact || 'ผู้ลงประกาศ';
+                        const initial = sellerName.charAt(0).toUpperCase();
+                        const badge = sellerProfile?.role === 'seller' ? '🟢 KKU Verified Seller' : '👤 โปรไฟล์ผู้ใช้';
+                        return `
+                    <button onclick="openSellerProfile('${sellerId}')" class="flex items-center space-x-2 text-left min-w-0 hover:opacity-80 transition">
                         <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300 border border-slate-700 shrink-0">
-                            ${(profileCache[post.seller_id]?.display_name || post.contact || 'U').charAt(0).toUpperCase()}
+                            ${escapeHtml(initial)}
                         </div>
                         <div class="min-w-0">
-                            <span class="text-xs text-slate-200 font-semibold block truncate">${profileCache[post.seller_id]?.display_name || post.contact || 'ผู้ลงประกาศ'}</span>
-                            <span class="text-[10px] ${post.seller_id && profileCache[post.seller_id] ? 'text-emerald-400' : 'text-slate-500'} block">
-                                ${post.seller_id && profileCache[post.seller_id] ? '🟢 ดูโปรไฟล์ผู้ขาย' : 'ผู้ลงประกาศ'}
-                            </span>
+                            <span class="text-xs text-slate-200 font-semibold block truncate">${escapeHtml(sellerName)}</span>
+                            <span class="text-[10px] ${sellerProfile ? 'text-emerald-400' : 'text-slate-500'} block">${badge}</span>
                         </div>
-                    </button>
+                    </button>`;
+                    })()}
                     <div class="text-right shrink-0">
                         <div class="text-[11px] text-amber-300">${getSellerRatingText(post.seller_id)}</div>
                         <button onclick="openDetailModalByData(${originalIndex})" class="mt-1 bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 text-xs font-semibold px-3.5 py-1.5 rounded-lg transition">
