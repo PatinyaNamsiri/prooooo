@@ -2,7 +2,827 @@
 <html lang="th">
 
 <head>
+    <meta charset="UTF-8"><!DOCTYPE html>
+<html lang="th">
+
+<head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KKU Pass & Share</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #0b0f19;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #fbbf24 0%, #f97316 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            border-color: rgba(249, 115, 22, 0.5);
+            box-shadow: 0 12px 30px -10px rgba(249, 115, 22, 0.25);
+        }
+    </style>
+</head>
+
+<body class="text-slate-100 min-h-screen relative selection:bg-orange-500 selection:text-white">
+
+    <!-- Navbar Header -->
+    <nav class="glass-nav sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
+
+            <!-- โลโก้ + ชื่อเว็บ -->
+            <div class="flex items-center space-x-3 cursor-pointer group" onclick="filterCategory('all')">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 via-amber-500 to-yellow-400 p-0.5 shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform duration-300">
+                    <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                        <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold text-gradient tracking-tight block leading-none">
+                        KKU PASS & SHARE
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium tracking-wider">ส่งต่อสิทธิ์ @มข.
+                    </span>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-3">
+                <div id="authNavArea">
+                    <button onclick="openAuthModal('login')"
+                        class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm px-5 py-2.5 rounded-xl border border-slate-700/80 transition font-medium hover:border-slate-500">
+                        เข้าสู่ระบบ
+                    </button>
+                </div>
+
+                <button onclick="handleSellClick()"
+                    class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold text-sm sm:text-base px-5 py-2.5 rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition active:scale-95 flex items-center justify-center whitespace-nowrap shrink-0">
+                    <span>ลงประกาศส่งต่อ</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero & Search Section -->
+    <header class="max-w-6xl mx-auto px-4 pt-10 pb-6 text-center relative overflow-hidden">
+        <div
+            class="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none">
+        </div>
+
+        <span
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold mb-3">
+            🟢 พื้นที่แลกเปลี่ยนของเด็ก มข.
+        </span>
+
+        <h1 class="text-3xl sm:text-5xl font-extrabold text-white mb-3 tracking-tight leading-tight">
+            KKU PASS & SHARE <span class="text-gradient">@KKU</span>
+        </h1>
+        <div class="max-w-4xl mx-auto px-4 my-6">
+            <div
+                class="relative overflow-hidden rounded-2xl border-2 border-dashed border-amber-500/40 bg-slate-900/80 p-6 sm:p-8 text-center transition hover:border-amber-500/70">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-amber-500/10 rounded-full blur-xl pointer-events-none">
+                </div>
+                <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-orange-500/10 rounded-full blur-xl pointer-events-none">
+                </div>
+        
+                <div class="relative z-10 flex flex-col items-center justify-center space-y-3">
+                    <span
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold border border-amber-500/20">
+                        📢 ADVERTISEMENT SPACE AVAILABLE
+                    </span>
+        
+                    <h3 class="text-xl sm:text-2xl font-bold text-white tracking-wide">
+                        สนใจติดโฆษณาตรงนี้เพื่อเข้าถึงเด็ก มข.?
+                    </h3>
+        
+                    <p class="text-xs sm:text-sm text-slate-400 max-w-md">
+                        พื้นที่แบนเนอร์ว่างสำหรับร้านอาหาร ร้านค้า หรือผู้จัดอีเวนต์รอบ มข.
+                        ติดต่อจองพื้นที่เพื่อโปรโมตสินค้าของคุณได้เลย
+                    </p>
+        
+                    <a href="https://line.me/ti/p/~natthawathomchan" target="_blank"
+                        class="mt-2 inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-amber-500/10 transition transform active:scale-95">
+                        💬 ติดต่อลงโฆษณาที่นี่
+                    </a>
+                </div>
+            </div>
+        </div>
+        <br>
+
+        <!-- Search Box -->
+        <div
+            class="glass-card p-2 sm:p-2.5 rounded-2xl shadow-2xl max-w-2xl mx-auto border border-slate-700/80 flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-grow">
+                <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input type="text" id="searchInput" onkeyup="searchCards()"
+                    placeholder="ค้นหาโต๊ะ, บัตรคอนเสิร์ต"
+                    class="w-full bg-slate-900/90 border border-slate-700/60 text-white rounded-xl pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:border-orange-500 transition placeholder:text-slate-500">
+            </div>
+            <button onclick="searchCards()"
+                class="bg-slate-800 hover:bg-slate-700 text-orange-400 font-medium px-6 py-2.5 rounded-xl border border-slate-700 transition shrink-0 text-sm flex items-center justify-center gap-2">
+                ค้นหา
+            </button>
+        </div>
+    </header>
+    <br>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 pb-20">
+        <div class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4 overflow-x-auto gap-4">
+            <div class="flex space-x-2 shrink-0">
+                <button id="btn-all" onclick="filterCategory('all')"
+                    class="tab-btn bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs sm:text-sm px-4 py-2 rounded-xl font-medium shadow-md transition">ทั้งหมด</button>
+                <button id="btn-table" onclick="filterCategory('table')"
+                    class="tab-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm px-4 py-2 rounded-xl border border-slate-700 transition">🍽️
+                    โต๊ะร้านอาหาร</button>
+                <button id="btn-ticket" onclick="filterCategory('ticket')"
+                    class="tab-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm px-4 py-2 rounded-xl border border-slate-700 transition">🎟️
+                    บัตรคอนเสิร์ต</button>
+            </div>
+
+            <div class="text-xs text-slate-400 whitespace-nowrap hidden md:block">
+                รายการทั้งหมด: <span id="itemCount" class="text-orange-400 font-bold">2</span>
+            </div>
+        </div>
+
+        <div id="noResults" class="hidden text-center py-16 glass-card rounded-2xl border border-slate-800">
+            <span class="text-5xl block mb-3 opacity-60">🔍</span>
+            <p class="text-slate-300 font-medium">ไม่พบรายการที่ค้นหา</p>
+            <p class="text-slate-500 text-xs mt-1">ลองใช้คำค้นอื่น หรือเลือกสลับหมวดหมู่ดูนะครับ</p>
+        </div>
+
+        <!-- Cards Listing Grid -->
+        <div id="posts-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Card 1 -->
+            <!-- <div class="card-item glass-card rounded-2xl border border-slate-800 overflow-hidden card-hover flex flex-col justify-between"
+                data-category="table" data-title="ร้านหลังมัก โซน A หน้าเวที">
+                <div class="h-44 w-full bg-slate-800 overflow-hidden relative">
+                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop"
+                        alt="ร้านหลังมัก" class="w-full h-full object-cover">
+                </div>
+                <div class="p-5">
+                    <div class="flex justify-between items-start mb-3">
+                        <span
+                            class="bg-red-500/10 text-red-400 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-red-500/20 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span> ปล่อยด่วนคืนนี้
+                        </span>
+                        <span class="text-[11px] text-slate-500 font-light">10 นาทีที่แล้ว</span>
+                    </div>
+                    <h3 class="card-title text-base font-bold text-white mb-1">ร้านหลังมัก (โซน A หน้าเวที)</h3>
+                    <p class="text-xs text-slate-400 mb-4 flex items-center gap-1">📍 โซนกังสดาล • คืนนี้</p>
+
+                    <div class="bg-slate-900/80 p-3.5 rounded-xl mb-4 text-xs space-y-1.5 border border-slate-800/80">
+                        <div class="flex justify-between text-slate-400"><span>ที่นั่ง:</span><span
+                                class="font-medium text-slate-200">4-6 คน (ก่อน 20:30)</span></div>
+                        <div class="flex justify-between text-slate-400"><span>ราคาจอง:</span><span
+                                class="line-through text-slate-500">300 ฿</span></div>
+                        <div class="flex justify-between text-sm pt-1.5 border-t border-slate-800"><span
+                                class="font-medium text-slate-300">ราคาปล่อยต่อ:</span><span
+                                class="font-extrabold text-amber-400 text-base">450 ฿</span></div>
+                    </div>
+                    <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">"ติดทำแลปด่วนครับไปไม่ได้แล้ว
+                        โต๊ะนี้มุมดีมากติดหน้าเวทีพอดี..."</p>
+                </div>
+                <div class="p-4 bg-slate-900/50 border-t border-slate-800/80 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div
+                            class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-200">
+                            M</div>
+                        <div>
+                            <span class="text-xs text-slate-300 font-medium block leading-none">Mook_KKU</span>
+                            <span class="text-[9px] text-emerald-400 font-medium">🎓 นักศึกษา มข. ✓</span>
+                        </div>
+                    </div>
+                    <button
+                        onclick="openDetailModal('หลังมัก (โซน A)', 'โซนกังสดาล', 'คืนนี้', '4-6 คน', 'ก่อน 20:30 น.', '300 ฿', '450 ฿', 'ติดทำแลปด่วนครับไปไม่ได้แล้ว โต๊ะนี้มุมดีมากติดหน้าเวทีพอดี')"
+                        class="bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-white border border-orange-500/30 text-xs font-medium px-3.5 py-1.5 rounded-lg transition">ดูรายละเอียด</button>
+                </div> -->
+            </div>
+
+            <!-- Card 2 -->
+            <!-- <div class="card-item glass-card rounded-2xl border border-slate-800 overflow-hidden card-hover flex flex-col justify-between"
+                data-category="ticket" data-title="บัตร Three Man Down ศูนย์ประชุม มข.">
+                <div class="h-44 w-full bg-slate-800 overflow-hidden relative">
+                    <img src="https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=600&auto=format&fit=crop"
+                        alt="บัตรคอนเสิร์ต" class="w-full h-full object-cover">
+                </div>
+                <div class="p-5">
+                    <div class="flex justify-between items-start mb-3">
+                        <span
+                            class="bg-purple-500/10 text-purple-400 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-purple-500/20">🎟️
+                            บัตรคอนเสิร์ต</span>
+                        <span class="text-[11px] text-slate-500 font-light">45 นาทีที่แล้ว</span>
+                    </div>
+                    <h3 class="card-title text-base font-bold text-white mb-1">Three Man Down Live in KKU</h3>
+                    <p class="text-xs text-slate-400 mb-4 flex items-center gap-1">📍 ศูนย์ประชุมฯ มข. • เสาร์นี้</p>
+
+                    <div class="bg-slate-900/80 p-3.5 rounded-xl mb-4 text-xs space-y-1.5 border border-slate-800/80">
+                        <div class="flex justify-between text-slate-400"><span>ประเภท:</span><span
+                                class="font-medium text-slate-200">บัตรยืน (Zone A) x 2 ใบ</span></div>
+                        <div class="flex justify-between text-slate-400"><span>ราคาป้าย:</span><span
+                                class="line-through text-slate-500">2,400 ฿</span></div>
+                        <div class="flex justify-between text-sm pt-1.5 border-t border-slate-800"><span
+                                class="font-medium text-slate-300">ปล่อยเหมา:</span><span
+                                class="font-extrabold text-purple-400 text-base">2,200 ฿</span></div>
+                    </div>
+                    <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">"กดบัตรมาเกินกับเพื่อนครับ โซน A
+                        ติดขอบเวที..."</p>
+                </div>
+                <div class="p-4 bg-slate-900/50 border-t border-slate-800/80 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div
+                            class="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
+                            T</div>
+                        <div>
+                            <span class="text-xs text-slate-300 font-medium block leading-none">TicketMaster</span>
+                            <span class="text-[9px] text-sky-400 font-medium">👤 ยืนยันตัวตน (KYC) ✓</span>
+                        </div>
+                    </div>
+                    <button
+                        onclick="openDetailModal('บัตร Three Man Down', 'ศูนย์ประชุมฯ มข.', 'เสาร์นี้', '2 ใบ (Zone A)', 'ประตูเปิด 18:00 น.', '2,400 ฿', '2,200 ฿', 'กดบัตรมาเกินกับเพื่อนครับ โซน A ติดขอบเวที ยืนยันตัวตนเรียบร้อย')"
+                        class="bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-white border border-orange-500/30 text-xs font-medium px-3.5 py-1.5 rounded-lg transition">ดูรายละเอียด</button>
+                </div>
+            </div> -->
+
+            <!-- Card 3 -->
+            
+
+        </div>
+    </main>
+
+    <!-- Modal 1: Auth -->
+    <div id="authModal"
+        class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-card border border-slate-700/80 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="flex border-b border-slate-800 bg-slate-900/80">
+                <button id="authTabLogin" onclick="switchAuthTab('login')"
+                    class="w-1/2 py-3.5 text-xs font-bold text-orange-400 border-b-2 border-orange-500">เข้าสู่ระบบ</button>
+                <button id="authTabRegister" onclick="switchAuthTab('register')"
+                    class="w-1/2 py-3.5 text-xs font-medium text-slate-400 hover:text-slate-200">สมัครสมาชิกใหม่</button>
+            </div>
+            <div class="p-6">
+                <div id="authNotice"
+                    class="hidden mb-4 p-3 bg-orange-500/10 border border-orange-500/30 rounded-xl text-xs text-orange-400 text-center font-medium">
+                    🔒 กรุณาเข้าสู่ระบบก่อนลงประกาศส่งต่อครับ
+                </div>
+                <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">อีเมล</label>
+                        <input type="email" id="loginEmail" required placeholder="name@example.com"
+                            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">รหัสผ่าน</label>
+                        <input type="password" id="loginPassword" required placeholder="••••••••"
+                            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold py-2.5 rounded-xl text-xs shadow-lg shadow-orange-500/20">เข้าสู่ระบบ</button>
+                </form>
+
+                <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-3.5 hidden">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">ประเภทผู้ใช้งาน</label>
+                        <select id="regType"
+                            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                            <option value="seller">🎟️ ผู้ขาย — ต้องใช้ @kkumail.com</option>
+                            <option value="buyer">👤 ผู้ซื้อ — ใช้อีเมลอะไรก็ได้</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อแสดงบนเว็บ</label>
+                        <input type="text" id="regName" required placeholder="เช่น Earth_EN12"
+                            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">อีเมล</label>
+                        <input type="email" id="regEmail" required placeholder="name@kkumail.com"
+                            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">รหัสผ่าน</label>
+                        <input type="password" id="regPassword" required minlength="6" placeholder="อย่างน้อย 6 ตัวอักษร"
+                            class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold py-2.5 rounded-xl text-xs shadow-lg">สร้างบัญชีผู้ใช้</button>
+                </form>
+                <button type="button" onclick="resendVerificationEmail()"
+                    class="w-full mt-3 border border-slate-700 hover:border-orange-500/50 text-slate-300 hover:text-orange-400 font-medium py-2.5 rounded-xl text-xs transition">
+                    📧 ส่งอีเมลยืนยันอีกครั้ง
+                </button>
+            </div>
+            <div class="px-6 py-3 bg-slate-900/50 border-t border-slate-800 text-center">
+                <button onclick="closeModal('authModal')" class="text-xs text-slate-500 hover:text-slate-300">ยกเลิก /
+                    ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Detail -->
+    <div id="detailModal"
+        class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-card border border-slate-700/80 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div class="p-6 space-y-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="mName" class="text-xl font-bold text-white">ชื่อสินค้า</h2>
+                        <p id="mZoneDate" class="text-slate-400 text-xs mt-1">📍 พิกัด</p>
+                    </div>
+                    <button onclick="closeModal('detailModal')"
+                        class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3 bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 text-xs">
+                    <div>
+                        <p class="text-slate-500">ประเภท/รายละเอียด</p>
+                        <p id="mSeats" class="font-medium text-slate-200 mt-0.5">-</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500">เวลานัดรับ</p>
+                        <p id="mTime" class="font-medium text-slate-200 mt-0.5">-</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500">ราคาเดิม</p>
+                        <p id="mRealPrice" class="font-medium text-slate-500 line-through mt-0.5">-</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500">ราคาปล่อยต่อ</p>
+                        <p id="mSellPrice" class="font-bold text-orange-400 text-sm mt-0.5">-</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 mb-1.5">รายละเอียดผู้ปล่อย</h4>
+                    <p id="mNote"
+                        class="text-slate-300 text-xs bg-slate-900/40 p-3 rounded-xl border border-slate-800/80 leading-relaxed">
+                        -</p>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-900/80 border-t border-slate-800 flex gap-3">
+                <button onclick="closeModal('detailModal')"
+                    class="w-1/3 bg-slate-800 text-slate-300 text-xs font-medium py-2.5 rounded-xl border border-slate-700">ปิด</button>
+                <button onclick="alert('ระบบกำลังนำคุณเข้าสู่ขั้นตอนการติดต่อซื้อขายผ่านคนกลาง')"
+                    class="w-2/3 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-semibold py-2.5 rounded-xl shadow-lg shadow-orange-500/20">🔒
+                    สนใจ / ซื้อสิทธิ์นี้</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Sell Form (Dynamic ตามหมวดหมู่) -->
+    <div id="sellModal"
+        class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-card border border-slate-700/80 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                <div>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2"><span>📝</span> ลงส่งต่อสิทธิ์</h3>
+                    <div id="sellerProfileHeader" class="mt-2"></div>
+                </div>
+                <button onclick="closeModal('sellModal')"
+                    class="text-slate-400 hover:text-white text-5xl font-bold">&times;</button>
+            </div>
+            <form id="sellForm" onsubmit="handleSellSubmit(event)" class="p-6 space-y-3.5 max-h-[75vh] overflow-y-auto">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">หมวดหมู่</label>
+                    <select id="fCategory" onchange="updateFormFieldsByCategory()" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                        <option value="table">🍽️ โต๊ะร้านอาหาร </option>
+                        <option value="ticket">🎟️ บัตรคอนเสิร์ต </option>
+                    </select>
+                </div>
+                <div>
+                    <label id="lblTitle"
+                        class="block text-xs font-medium text-slate-300 mb-1">ชื่อร้านอาหาร/คาเฟ่</label>
+                    <input type="text" id="fTitle" required placeholder="เช่น ร้านหลังมัก (โซน A)"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">URL รูปภาพสินค้า (ถ้ามี)</label>
+                    <input type="url" id="fImgUrl" placeholder="https://example.com/image.jpg"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label id="lblZone" class="block text-xs font-medium text-slate-300 mb-1">พิกัด/โซนร้าน</label>
+                        <input type="text" id="fZone" required placeholder="เช่น โซนกังสดาล"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label id="lblDate" class="block text-xs font-medium text-slate-300 mb-1">วันที่จองไว้</label>
+                        <input type="date" id="fDate" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label id="lblSeats" class="block text-xs font-medium text-slate-300 mb-1">จำนวนที่นั่ง</label>
+                        <input type="text" id="fSeats" required placeholder="เช่น โต๊ะ 4-6 คน"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label id="lblTime"
+                            class="block text-xs font-medium text-slate-300 mb-1">เงื่อนไขเวลา/เวลาเข้างาน</label>
+                        <input type="text" id="fTime" required placeholder="เช่น ต้องเข้าก่อน 20:30 น."
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label id="lblRealPrice"
+                            class="block text-xs font-medium text-slate-300 mb-1">มัดจำเดิม/ราคาป้าย (บาท)</label>
+                        <input type="number" id="fRealPrice" required placeholder="300"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">ราคาปล่อยต่อ (บาท)</label>
+                        <input type="number" id="fSellPrice" required placeholder="250"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">รายละเอียดเพิ่มเติม /
+                        สาเหตุที่ปล่อย</label>
+                    <textarea id="fNote" rows="3" required placeholder="เช่น ติดแลปด่วนไปไม่ได้ครับ..."
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-orange-500"></textarea>
+                </div>
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3 rounded-xl text-xs shadow-lg shadow-orange-500/25 transition">
+                    🚀 ลงประกาศทันที
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500">
+        <p>© 2026 KKU Pass & Share — ระบบส่งต่อสิทธิ์และนักศึกษามหาวิทยาลัยขอนแก่น</p>
+    </footer>
+
+    <!-- JavaScript Section -->
+    <!-- <script>
+        let currentUser = null;
+            let currentCategory = 'all';
+
+            // Auth Functions
+            function openAuthModal(mode) {
+                switchAuthTab(mode);
+                document.getElementById('authModal').classList.remove('hidden');
+            }
+
+            function switchAuthTab(tab) {
+                const loginBtn = document.getElementById('authTabLogin');
+                const regBtn = document.getElementById('authTabRegister');
+                const loginForm = document.getElementById('loginForm');
+                const regForm = document.getElementById('registerForm');
+
+                if (tab === 'login') {
+                    loginBtn.className = 'w-1/2 py-3.5 text-xs font-bold text-orange-400 border-b-2 border-orange-500';
+                    regBtn.className = 'w-1/2 py-3.5 text-xs font-medium text-slate-400 hover:text-slate-200';
+                    loginForm.classList.remove('hidden');
+                    regForm.classList.add('hidden');
+                } else {
+                    regBtn.className = 'w-1/2 py-3.5 text-xs font-bold text-orange-400 border-b-2 border-orange-500';
+                    loginBtn.className = 'w-1/2 py-3.5 text-xs font-medium text-slate-400 hover:text-slate-200';
+                    regForm.classList.remove('hidden');
+                    loginForm.classList.add('hidden');
+                }
+            }
+
+            // ฟังก์ชันล็อกอิน (ปรับรองรับทั้ง handleLogin และ handleLoginSubmit)
+            function handleLogin(e) {
+                e.preventDefault();
+                const emailInput = document.getElementById('loginEmail');
+                const email = emailInput ? emailInput.value : '';
+                const name = email.split('@')[0] || 'KKU_User';
+                const isStudent = email.includes('kkumail.com');
+
+                currentUser = {
+                    name: name,
+                    badge: isStudent ? '🎓 นักศึกษา มข. ✓' : '👤 ยืนยันตัวตน (KYC) ✓',
+                    color: isStudent ? 'text-emerald-400' : 'text-sky-400'
+                };
+
+                updateAuthUI();
+                closeModal('authModal');
+            }
+
+            // สร้าง alias รองรับกรณีฟอร์ม HTML เรียกใช้ handleLoginSubmit
+            function handleLoginSubmit(e) {
+                handleLogin(e);
+            }
+
+            function handleRegister(e) {
+                e.preventDefault();
+                const nameInput = document.getElementById('regName');
+                const typeInput = document.getElementById('regType');
+
+                const name = nameInput ? nameInput.value : 'User';
+                const type = typeInput ? typeInput.value : 'student';
+                const isStudent = type === 'student';
+
+                currentUser = {
+                    name: name,
+                    badge: isStudent ? '🎓 นักศึกษา มข. ✓' : '👤 ยืนยันตัวตน (KYC) ✓',
+                    color: isStudent ? 'text-emerald-400' : 'text-sky-400'
+                };
+
+                updateAuthUI();
+                closeModal('authModal');
+            }
+
+            function updateAuthUI() {
+                const authNavArea = document.getElementById('authNavArea');
+                if (!authNavArea) return;
+
+                if (currentUser) {
+                    authNavArea.innerHTML = `
+                    <div class="flex items-center space-x-2 bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-1.5">
+                        <div class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-xs">
+                            ${currentUser.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <span class="text-xs font-semibold text-slate-200 block leading-tight">${currentUser.name}</span>
+                            <span class="text-[9px] ${currentUser.color} font-medium block leading-tight">${currentUser.badge}</span>
+                        </div>
+                        <button onclick="logout()" class="text-slate-400 hover:text-red-400 text-xs ml-1 font-bold">✕</button>
+                    </div>
+                `;
+                } else {
+                    authNavArea.innerHTML = `
+                    <button onclick="openAuthModal('login')"
+                        class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm px-4 py-2 rounded-xl border border-slate-700/80 transition font-medium hover:border-slate-500">
+                        เข้าสู่ระบบ
+                    </button>
+                `;
+                }
+            }
+
+            function logout() {
+                currentUser = null;
+                updateAuthUI();
+            }
+
+            function handleSellClick() {
+                if (!currentUser) {
+                    const notice = document.getElementById('authNotice');
+                    if (notice) notice.classList.remove('hidden');
+                    openAuthModal('login');
+                } else {
+                    const badge = document.getElementById('sellerBadge');
+                    if (badge) badge.innerText = `ประกาศในนาม: ${currentUser.name} (${currentUser.badge})`;
+                    updateFormFieldsByCategory();
+                    document.getElementById('sellModal').classList.remove('hidden');
+                }
+            }
+
+            function closeModal(id) {
+                const targetModal = document.getElementById(id);
+                if (targetModal) targetModal.classList.add('hidden');
+                if (id === 'authModal') {
+                    const notice = document.getElementById('authNotice');
+                    if (notice) notice.classList.add('hidden');
+                }
+            }
+
+            // Dynamic Form Fields Handler
+            function updateFormFieldsByCategory() {
+                const fCategory = document.getElementById('fCategory');
+                if (!fCategory) return;
+                const cat = fCategory.value;
+
+                const lblTitle = document.getElementById('lblTitle');
+                const fTitle = document.getElementById('fTitle');
+                const lblZone = document.getElementById('lblZone');
+                const fZone = document.getElementById('fZone');
+                const lblDate = document.getElementById('lblDate');
+                const fDate = document.getElementById('fDate');
+                const lblSeats = document.getElementById('lblSeats');
+                const fSeats = document.getElementById('fSeats');
+                const lblTime = document.getElementById('lblTime');
+                const fTime = document.getElementById('fTime');
+                const lblRealPrice = document.getElementById('lblRealPrice');
+                const lblContact = document.getElementById('lblContact');
+                const fContact = document.getElementById('fContact');
+
+                if (cat === 'table') {
+                    if (lblTitle) lblTitle.innerText = "ชื่อร้านอาหาร/คาเฟ่";
+                    if (fTitle) fTitle.placeholder = "เช่น ร้านหลังมัก (โซน A หน้าเวที)";
+                    if (lblZone) lblZone.innerText = "พิกัด/โซนร้าน";
+                    if (fZone) fZone.placeholder = "เช่น โซนกังสดาล";
+                    if (lblDate) lblDate.innerText = "วันที่จองไว้";
+                    if (fDate) fDate.placeholder = "เช่น คืนนี้, 15 ส.ค.";
+                    if (lblSeats) lblSeats.innerText = "จำนวนที่นั่ง";
+                    if (fSeats) fSeats.placeholder = "เช่น โต๊ะ 4-6 คน";
+                    if (lblTime) lblTime.innerText = "เงื่อนไขเวลาเข้าโต๊ะ";
+                    if (fTime) fTime.placeholder = "เช่น ต้องเข้าก่อน 20:30 น.";
+                    if (lblRealPrice) lblRealPrice.innerText = "ราคามัดจำเดิม (บาท)";
+                    if (lblContact) lblContact.innerText = "ช่องทางติดต่อ / พิกัดส่งมอบโต๊ะ";
+                    if (fContact) fContact.placeholder = "เช่น Line ID: @xxx / นัดเจอหน้าร้าน";
+                } else if (cat === 'ticket') {
+                    if (lblTitle) lblTitle.innerText = "ชื่อคอนเสิร์ต / ชื่องาน";
+                    if (fTitle) fTitle.placeholder = "เช่น Three Man Down Live in KKU";
+                    if (lblZone) lblZone.innerText = "สถานที่จัดงาน";
+                    if (fZone) fZone.placeholder = "เช่น ศูนย์ประชุมฯ มข.";
+                    if (lblDate) lblDate.innerText = "วันแสดงคอนเสิร์ต";
+                    if (fDate) fDate.placeholder = "เช่น เสาร์นี้, 20 ส.ค.";
+                    if (lblSeats) lblSeats.innerText = "รายละเอียดโซน/บัตร";
+                    if (fSeats) fSeats.placeholder = "เช่น บัตรยืน (Zone A) x 2 ใบ";
+                    if (lblTime) lblTime.innerText = "เวลาประตูเปิด / เริ่มแสดง";
+                    if (fTime) fTime.placeholder = "เช่น ประตูเปิด 18:00 น.";
+                    if (lblRealPrice) lblRealPrice.innerText = "ราคาหน้าป้าย/ราคาเดิม (บาท)";
+                    if (lblContact) lblContact.innerText = "ช่องทางติดต่อ / รูปแบบการส่งมอบบัตร";
+                    if (fContact) fContact.placeholder = "เช่น Line ID: @xxx / นัดรับบัตรจริงหน้างาน";
+                }
+            }
+
+            // Filter and Search Functions
+            function filterCategory(category) {
+                currentCategory = category;
+                const buttons = document.querySelectorAll('.tab-btn');
+                buttons.forEach(btn => {
+                    btn.className = 'tab-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm px-4 py-2 rounded-xl border border-slate-700 transition';
+                });
+
+                const activeBtn = document.getElementById(`btn-${category}`);
+                if (activeBtn) {
+                    activeBtn.className = 'tab-btn bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs sm:text-sm px-4 py-2 rounded-xl font-medium shadow-md transition';
+                }
+
+                searchCards();
+            }
+
+            function searchCards() {
+                const searchInput = document.getElementById('searchInput');
+                const query = searchInput ? searchInput.value.toLowerCase() : '';
+                const cards = document.querySelectorAll('.card-item');
+                let visibleCount = 0;
+
+                cards.forEach(card => {
+                    const category = card.getAttribute('data-category');
+                    const titleAttr = card.getAttribute('data-title');
+                    const title = titleAttr ? titleAttr.toLowerCase() : '';
+                    const matchCategory = (currentCategory === 'all' || category === currentCategory);
+                    const matchQuery = title.includes(query);
+
+                    if (matchCategory && matchQuery) {
+                        card.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+
+                const itemCount = document.getElementById('itemCount');
+                if (itemCount) itemCount.innerText = visibleCount;
+
+                const noResults = document.getElementById('noResults');
+                if (noResults) {
+                    if (visibleCount === 0) {
+                        noResults.classList.remove('hidden');
+                    } else {
+                        noResults.classList.add('hidden');
+                    }
+                }
+            }
+
+            // Detail Modal Function
+            function openDetailModal(name, zone, date, seats, time, realPrice, sellPrice, note) {
+                document.getElementById('mName').innerText = name;
+                document.getElementById('mZoneDate').innerText = `📍 พิกัด: ${zone} • ${date}`;
+                document.getElementById('mSeats').innerText = seats;
+                document.getElementById('mTime').innerText = time;
+                document.getElementById('mRealPrice').innerText = realPrice;
+                document.getElementById('mSellPrice').innerText = sellPrice;
+                document.getElementById('mNote').innerText = `"${note}"`;
+                document.getElementById('detailModal').classList.remove('hidden');
+            }
+
+            // Dynamic Listing Handler
+            function handleSellSubmit(e) {
+                e.preventDefault();
+                const category = document.getElementById('fCategory').value;
+                const title = document.getElementById('fTitle').value;
+                const imgUrl = document.getElementById('fImgUrl').value || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop';
+                const zone = document.getElementById('fZone').value;
+                const date = document.getElementById('fDate').value;
+                const seats = document.getElementById('fSeats').value;
+                const time = document.getElementById('fTime').value;
+                const realPrice = document.getElementById('fRealPrice').value + ' ฿';
+                const sellPrice = document.getElementById('fSellPrice').value + ' ฿';
+                const contact = document.getElementById('fContact').value;
+                const note = document.getElementById('fNote').value + ` (ติดต่อ: ${contact})`;
+
+                let catBadge = '🏷️ ปล่อยของ';
+                let catColor = 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+
+                if (category === 'table') {
+                    catBadge = '🍽️ ร้านอาหาร';
+                    catColor = 'bg-red-500/10 text-red-400 border-red-500/20';
+                } else if (category === 'ticket') {
+                    catBadge = '🎟️ บัตรคอนเสิร์ต';
+                    catColor = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+                }
+
+                const grid = document.getElementById('listingGrid');
+                if (!grid) return;
+
+                const newCard = document.createElement('div');
+                newCard.className = 'card-item glass-card rounded-2xl border border-slate-800 overflow-hidden card-hover flex flex-col justify-between';
+                newCard.setAttribute('data-category', category);
+                newCard.setAttribute('data-title', title);
+
+                newCard.innerHTML = `
+                <div class="h-44 w-full bg-slate-800 overflow-hidden relative">
+                    <img src="${imgUrl}" alt="${title}" class="w-full h-full object-cover">
+                </div>
+                <div class="p-5">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="${catColor} text-[11px] font-semibold px-2.5 py-1 rounded-lg border">${catBadge}</span>
+                        <span class="text-[11px] text-slate-500 font-light">เมื่อครู่นี้</span>
+                    </div>
+                    <h3 class="card-title text-base font-bold text-white mb-1">${title}</h3>
+                    <p class="text-xs text-slate-400 mb-4 flex items-center gap-1">📍 ${zone} • ${date}</p>
+                    <div class="bg-slate-900/80 p-3.5 rounded-xl mb-4 text-xs space-y-1.5 border border-slate-800/80">
+                        <div class="flex justify-between text-slate-400"><span>รายละเอียด:</span><span class="font-medium text-slate-200">${seats}</span></div>
+                        <div class="flex justify-between text-slate-400"><span>ราคาเดิม:</span><span class="line-through text-slate-500">${realPrice}</span></div>
+                        <div class="flex justify-between text-sm pt-1.5 border-t border-slate-800"><span class="font-medium text-slate-300">ราคาปล่อยต่อ:</span><span class="font-extrabold text-orange-400 text-base">${sellPrice}</span></div>
+                    </div>
+                    <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">"${note}"</p>
+                </div>
+                <div class="p-4 bg-slate-900/50 border-t border-slate-800/80 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-7 h-7 rounded-full bg-orange-500/20 flex items-center justify-center text-xs font-bold text-orange-400">
+                            ${currentUser ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-300 font-medium block leading-none">${currentUser ? currentUser.name : 'User'}</span>
+                            <span class="text-[9px] ${currentUser ? currentUser.color : ''} font-medium">${currentUser ? currentUser.badge : ''}</span>
+                        </div>
+                    </div>
+                    <button onclick="openDetailModal('${title.replace(/'/g, "\\'")}', '${zone.replace(/'/g, "\\'")}', '${date.replace(/'/g, "\\'")}', '${seats.replace(/'/g, "\\'")}', '${time.replace(/'/g, "\\'")}', '${realPrice}', '${sellPrice}', '${note.replace(/'/g, "\\'")}')"
+                        class="bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-white border border-orange-500/30 text-xs font-medium px-3.5 py-1.5 rounded-lg transition">ดูรายละเอียด</button>
+                </div>
+            `;
+
+                grid.insertBefore(newCard, grid.firstChild);
+                document.getElementById('sellForm').reset();
+                closeModal('sellModal');
+                filterCategory('all');
+            }
+    </script> -->
+    
+
+    <!-- Modal: Seller Profile & Reviews -->
+    <div id="profileModal"
+        class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-card border border-slate-700/80 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900/95 z-10">
+                <h3 class="text-base font-bold text-white">👤 โปรไฟล์</h3>
+                <button onclick="closeModal('profileModal')" class="text-slate-400 hover:text-white text-4xl font-bold">&times;</button>
+            </div>
+            <div id="profileModalContent" class="p-6"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+
+</body>
+
+</html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KKU Pass & Share</title>
     <!-- Tailwind CSS CDN -->
