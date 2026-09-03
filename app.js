@@ -58,7 +58,7 @@ async function syncCurrentUser(session) {
 
     let { data: profile } = await _supabase
         .from('profiles')
-        .select('id, display_name, role, bio, avatar_url')
+        .select('display_name, role, bio, avatar_url')
         .eq('id', session.user.id)
         .maybeSingle();
 
@@ -92,22 +92,11 @@ async function syncCurrentUser(session) {
         email,
         name: displayName,
         role,
-        bio: profile?.bio || '',
-        avatar_url: profile?.avatar_url || '',
         isKku,
         emailVerified: verified,
         isVerifiedSeller: role === 'seller' && isKku && verified,
         badge: role === 'seller' && isKku && verified ? '🟢 KKU Verified Seller' : '👤 Buyer',
         color: role === 'seller' && isKku && verified ? 'text-emerald-400' : 'text-sky-400'
-    };
-
-    // ให้ Profile ของบัญชีที่ Login อยู่พร้อมใช้ทันที
-    profileCache[currentUser.id] = {
-        id: currentUser.id,
-        display_name: currentUser.name,
-        role: currentUser.role,
-        bio: currentUser.bio,
-        avatar_url: currentUser.avatar_url
     };
 }
 
@@ -128,7 +117,7 @@ function updateAuthUI() {
                     <span class="text-xs font-semibold text-slate-200 block leading-tight">${currentUser.name}</span>
                     <span class="text-[9px] ${currentUser.color} font-medium block leading-tight">${currentUser.badge}</span>
                 </div>
-                <button onclick="openMyProfile()" class="text-slate-300 hover:text-white text-xs ml-1 font-semibold">โปรไฟล์</button>
+                <button onclick="openMyProfile(); return false;" type="button" class="text-slate-300 hover:text-white text-xs ml-1 font-semibold cursor-pointer">โปรไฟล์</button>
                 <button onclick="logout()" class="text-slate-400 hover:text-red-400 text-xs ml-1 font-bold">✕</button>
             </div>`;
     } else {
@@ -416,22 +405,8 @@ function renderPosts(postsToRender) {
 
                 <div class="p-4 bg-slate-950/40 border-t border-slate-800/60 flex items-center justify-between gap-3">
                     ${(() => {
-                        // เจ้าของประกาศต้องอ้างอิงจาก seller_id และ Profile เท่านั้น
                         const sellerId = post.seller_id || '';
-                        let sellerProfile = sellerId ? profileCache[sellerId] : null;
-
-                        // ถ้าเป็นประกาศของคนที่ Login อยู่ ให้ใช้ Profile ปัจจุบันทันที
-                        if (!sellerProfile && sellerId && currentUser && sellerId === currentUser.id) {
-                            sellerProfile = {
-                                id: currentUser.id,
-                                display_name: currentUser.name,
-                                role: currentUser.role,
-                                bio: currentUser.bio || '',
-                                avatar_url: currentUser.avatar_url || ''
-                            };
-                            profileCache[sellerId] = sellerProfile;
-                        }
-
+                        const sellerProfile = sellerId ? profileCache[sellerId] : null;
                         const sellerName = sellerProfile?.display_name || 'โปรไฟล์ผู้ลงประกาศ';
                         const initial = sellerName.charAt(0).toUpperCase();
                         const badge = sellerProfile?.role === 'seller' ? '🟢 KKU Verified Seller' : '👤 โปรไฟล์ผู้ใช้';
@@ -673,6 +648,20 @@ function starsHTML(rating, size = 'text-sm') {
 
 async function openMyProfile() {
     if (!currentUser) return openAuthModal('login');
+    if (!_supabase) return alert('ยังไม่ได้เชื่อมต่อ Supabase');
+
+    // สร้าง cache ของตัวเองจากข้อมูลที่ใช้แสดงบน navbar ก่อน
+    // เพื่อให้ปุ่ม "โปรไฟล์" ด้านบนเปิดได้แม้ profile ยังไม่ถูกโหลดเข้า cache
+    if (!profileCache[currentUser.id]) {
+        profileCache[currentUser.id] = {
+            id: currentUser.id,
+            display_name: currentUser.name || 'ผู้ใช้',
+            role: currentUser.role || 'buyer',
+            bio: '',
+            avatar_url: ''
+        };
+    }
+
     await openSellerProfile(currentUser.id);
 }
 
