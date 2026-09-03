@@ -58,7 +58,7 @@ async function syncCurrentUser(session) {
 
     let { data: profile } = await _supabase
         .from('profiles')
-        .select('display_name, role, bio, avatar_url')
+        .select('id, display_name, role, bio, avatar_url')
         .eq('id', session.user.id)
         .maybeSingle();
 
@@ -92,11 +92,22 @@ async function syncCurrentUser(session) {
         email,
         name: displayName,
         role,
+        bio: profile?.bio || '',
+        avatar_url: profile?.avatar_url || '',
         isKku,
         emailVerified: verified,
         isVerifiedSeller: role === 'seller' && isKku && verified,
         badge: role === 'seller' && isKku && verified ? '🟢 KKU Verified Seller' : '👤 Buyer',
         color: role === 'seller' && isKku && verified ? 'text-emerald-400' : 'text-sky-400'
+    };
+
+    // ให้ Profile ของบัญชีที่ Login อยู่พร้อมใช้ทันที
+    profileCache[currentUser.id] = {
+        id: currentUser.id,
+        display_name: currentUser.name,
+        role: currentUser.role,
+        bio: currentUser.bio,
+        avatar_url: currentUser.avatar_url
     };
 }
 
@@ -405,8 +416,22 @@ function renderPosts(postsToRender) {
 
                 <div class="p-4 bg-slate-950/40 border-t border-slate-800/60 flex items-center justify-between gap-3">
                     ${(() => {
+                        // เจ้าของประกาศต้องอ้างอิงจาก seller_id และ Profile เท่านั้น
                         const sellerId = post.seller_id || '';
-                        const sellerProfile = sellerId ? profileCache[sellerId] : null;
+                        let sellerProfile = sellerId ? profileCache[sellerId] : null;
+
+                        // ถ้าเป็นประกาศของคนที่ Login อยู่ ให้ใช้ Profile ปัจจุบันทันที
+                        if (!sellerProfile && sellerId && currentUser && sellerId === currentUser.id) {
+                            sellerProfile = {
+                                id: currentUser.id,
+                                display_name: currentUser.name,
+                                role: currentUser.role,
+                                bio: currentUser.bio || '',
+                                avatar_url: currentUser.avatar_url || ''
+                            };
+                            profileCache[sellerId] = sellerProfile;
+                        }
+
                         const sellerName = sellerProfile?.display_name || 'โปรไฟล์ผู้ลงประกาศ';
                         const initial = sellerName.charAt(0).toUpperCase();
                         const badge = sellerProfile?.role === 'seller' ? '🟢 KKU Verified Seller' : '👤 โปรไฟล์ผู้ใช้';
