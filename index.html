@@ -338,6 +338,10 @@
                     <button type="submit"
                         class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold py-2.5 rounded-xl text-xs shadow-lg">สร้างบัญชีผู้ใช้</button>
                 </form>
+                <button type="button" onclick="resendVerificationEmail()"
+                    class="w-full mt-3 border border-slate-700 hover:border-orange-500/50 text-slate-300 hover:text-orange-400 font-medium py-2.5 rounded-xl text-xs transition">
+                    📧 ส่งอีเมลยืนยันอีกครั้ง
+                </button>
             </div>
             <div class="px-6 py-3 bg-slate-900/50 border-t border-slate-800 text-center">
                 <button onclick="closeModal('authModal')" class="text-xs text-slate-500 hover:text-slate-300">ยกเลิก /
@@ -401,7 +405,7 @@
             <div class="p-5 border-b border-slate-800 flex justify-between items-center">
                 <div>
                     <h3 class="text-base font-bold text-white flex items-center gap-2"><span>📝</span> ลงส่งต่อสิทธิ์</h3>
-                    <p id="sellerBadge" class="text-[11px] text-orange-400 font-medium mt-0.5">ประกาศในนาม: -</p>
+                    <div id="sellerProfileHeader" class="mt-2"></div>
                 </div>
                 <button onclick="closeModal('sellModal')"
                     class="text-slate-400 hover:text-white text-5xl font-bold">&times;</button>
@@ -434,7 +438,7 @@
                     </div>
                     <div>
                         <label id="lblDate" class="block text-xs font-medium text-slate-300 mb-1">วันที่จองไว้</label>
-                        <input type="text" id="fDate" required placeholder="เช่น คืนนี้, 15 ส.ค."
+                        <input type="date" id="fDate" required
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500">
                     </div>
                 </div>
