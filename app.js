@@ -163,20 +163,51 @@ async function handleRegister(e) {
         return alert('🔒 ผู้ขายต้องใช้ KKU Mail ที่ลงท้ายด้วย @kkumail.com');
     }
 
-    const { error } = await _supabase.auth.signUp({
+    const { data, error } = await _supabase.auth.signUp({
         email,
         password,
-        options: { data: { display_name: name, role: type } }
+        options: {
+            data: { display_name: name, role: type },
+            emailRedirectTo: window.location.origin + window.location.pathname
+        }
     });
 
     if (error) return alert('สมัครสมาชิกไม่สำเร็จ: ' + error.message);
 
-    if (type === 'seller') {
-        alert('📧 สมัครสำเร็จ! กรุณาเปิด KKU Mail แล้วกดลิงก์ยืนยันอีเมลก่อน จึงจะลงขายได้');
+    // Supabase normally returns a user with a null session when email confirmation is required.
+    if (data?.user && !data?.session) {
+        if (type === 'seller') {
+            alert('📧 สมัครสำเร็จ! ระบบส่งอีเมลยืนยันไปที่ ' + email + '\n\nถ้าไม่พบอีเมล ให้ตรวจ Spam/Junk หรือกด “ส่งอีเมลยืนยันอีกครั้ง”');
+        } else {
+            alert('🎉 สมัครสำเร็จ! ระบบส่งอีเมลยืนยันไปที่ ' + email + '\n\nถ้าไม่พบอีเมล ให้ตรวจ Spam/Junk หรือกด “ส่งอีเมลยืนยันอีกครั้ง”');
+        }
+    } else if (data?.session) {
+        alert('🎉 สมัครและเข้าสู่ระบบสำเร็จ');
     } else {
-        alert('🎉 สมัครสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี');
+        alert('สมัครสำเร็จ แต่ไม่พบข้อมูลการสมัคร กรุณาลองเข้าสู่ระบบอีกครั้ง');
     }
-    closeModal('authModal');
+}
+
+async function resendVerificationEmail() {
+    if (!_supabase) return alert('ยังไม่ได้เชื่อมต่อ Supabase');
+
+    const email = document.getElementById('regEmail')?.value.trim().toLowerCase();
+    if (!email) return alert('กรุณากรอกอีเมลก่อน แล้วกดส่งอีเมลยืนยันอีกครั้ง');
+
+    const { error } = await _supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+            emailRedirectTo: window.location.origin + window.location.pathname
+        }
+    });
+
+    if (error) {
+        console.error('resend verification error:', error);
+        return alert('ส่งอีเมลยืนยันไม่สำเร็จ: ' + error.message);
+    }
+
+    alert('📧 ส่งอีเมลยืนยันอีกครั้งแล้ว!\n\nตรวจสอบ Inbox และ Spam/Junk ของ ' + email);
 }
 
 async function logout() {
@@ -210,14 +241,29 @@ function switchAuthTab(tab) {
     }
 }
 
+function renderLoggedInSellerProfile() {
+    const el = document.getElementById('sellerProfileHeader');
+    if (!el || !currentUser) return;
+
+    const initial = (currentUser.name || 'U').charAt(0).toUpperCase();
+    el.innerHTML = `
+        <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-700/80 rounded-xl px-3 py-2.5">
+            <div class="w-9 h-9 rounded-full bg-orange-500/20 flex items-center justify-center text-sm font-bold text-orange-400">${escapeHtml(initial)}</div>
+            <div class="min-w-0">
+                <div class="text-[10px] text-slate-500">โปรไฟล์ผู้ลงประกาศ</div>
+                <div class="text-xs text-white font-semibold truncate">${escapeHtml(currentUser.name || 'ผู้ใช้')}</div>
+                <div class="text-[10px] ${currentUser.color || 'text-slate-400'}">${escapeHtml(currentUser.badge || 'ผู้ใช้')}</div>
+            </div>
+        </div>`;
+}
+
 function handleSellClick() {
     if (!currentUser) {
         const notice = document.getElementById('authNotice');
         if (notice) notice.classList.remove('hidden');
         openAuthModal('login');
     } else {
-        const badge = document.getElementById('sellerBadge');
-        if (badge) badge.innerText = `ประกาศในนาม: ${currentUser.name} (${currentUser.badge})`;
+        renderLoggedInSellerProfile();
         updateFormFieldsByCategory();
         openModal('sellModal');
     }
@@ -473,7 +519,7 @@ function updateFormFieldsByCategory() {
         if (lblZone) lblZone.innerText = "พิกัด/โซนร้าน";
         if (fZone) fZone.placeholder = "เช่น โซนกังสดาล";
         if (lblDate) lblDate.innerText = "วันที่จองไว้";
-        if (fDate) fDate.placeholder = "เช่น คืนนี้, 15 ส.ค.";
+        if (fDate) fDate.placeholder = "เลือกวันที่";
         if (lblSeats) lblSeats.innerText = "จำนวนที่นั่ง";
         if (fSeats) fSeats.placeholder = "เช่น โต๊ะ 4-6 คน";
         if (lblTime) lblTime.innerText = "เงื่อนไขเวลาเข้าโต๊ะ";
