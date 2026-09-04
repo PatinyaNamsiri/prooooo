@@ -58,7 +58,7 @@ async function syncCurrentUser(session) {
 
     let { data: profile } = await _supabase
         .from('profiles')
-        .select('display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
+        .select('id, display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
         .eq('id', session.user.id)
         .maybeSingle();
 
@@ -95,6 +95,7 @@ async function syncCurrentUser(session) {
         id: session.user.id,
         email,
         name: displayName,
+        avatar_url: profile?.avatar_url || '',
         role,
         isKku,
         emailVerified: verified,
@@ -102,6 +103,20 @@ async function syncCurrentUser(session) {
         badge: role === 'seller' && isKku && verified ? '🟢 KKU Verified Seller' : '👤 Buyer',
         color: role === 'seller' && isKku && verified ? 'text-emerald-400' : 'text-sky-400'
     };
+
+    // เก็บ profile ล่าสุดไว้ใน cache เสมอ เพื่อไม่ให้ข้อมูลหายเมื่อ refresh หน้าเว็บ
+    profileCache[currentUser.id] = {
+        id: currentUser.id,
+        display_name: profile?.display_name || displayName,
+        role: profile?.role || role,
+        bio: profile?.bio || '',
+        avatar_url: profile?.avatar_url || '',
+        instagram: profile?.instagram || '',
+        facebook: profile?.facebook || '',
+        line_id: profile?.line_id || '',
+        phone: profile?.phone || ''
+    };
+
 }
 
 function updateAuthUI() {
@@ -112,10 +127,13 @@ function updateAuthUI() {
     if (currentUser) {
         if (loginBtn) loginBtn.classList.add('hidden');
         authNavArea.classList.remove('hidden');
+        const topAvatar = currentUser.avatar_url
+            ? `<img src="${escapeHtml(currentUser.avatar_url)}" alt="รูปโปรไฟล์" class="w-full h-full object-cover">`
+            : `<span>${escapeHtml((currentUser.name || 'U').charAt(0).toUpperCase())}</span>`;
         authNavArea.innerHTML = `
             <div class="flex items-center space-x-2 bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-1.5">
-                <div class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-xs">
-                    ${currentUser.name.charAt(0).toUpperCase()}
+                <div class="w-7 h-7 rounded-full overflow-hidden bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-xs border border-slate-700">
+                    ${topAvatar}
                 </div>
                 <div class="text-left hidden sm:block">
                     <span class="text-xs font-semibold text-slate-200 block leading-tight">${currentUser.name}</span>
@@ -232,16 +250,20 @@ function switchAuthTab(tab) {
     const loginForm = document.getElementById('loginForm');
     const regForm = document.getElementById('registerForm');
 
+    const resendArea = document.getElementById('resendVerificationArea');
+
     if (tab === 'login') {
         if (loginBtn) loginBtn.className = 'w-1/2 py-3.5 text-xs font-bold text-orange-400 border-b-2 border-orange-500';
         if (regBtn) regBtn.className = 'w-1/2 py-3.5 text-xs font-medium text-slate-400 hover:text-slate-200';
         if (loginForm) loginForm.classList.remove('hidden');
         if (regForm) regForm.classList.add('hidden');
+        if (resendArea) resendArea.classList.add('hidden');
     } else {
         if (regBtn) regBtn.className = 'w-1/2 py-3.5 text-xs font-bold text-orange-400 border-b-2 border-orange-500';
         if (loginBtn) loginBtn.className = 'w-1/2 py-3.5 text-xs font-medium text-slate-400 hover:text-slate-200';
         if (regForm) regForm.classList.remove('hidden');
         if (loginForm) loginForm.classList.add('hidden');
+        if (resendArea) resendArea.classList.remove('hidden');
     }
 }
 
@@ -307,7 +329,9 @@ async function fetchPosts() {
 
     // โหลดโปรไฟล์ผู้ขาย + รีวิว เพื่อแสดงชื่อ, KKU badge และคะแนนบนประกาศ
     const sellerIds = [...new Set(allPosts.map(p => p.seller_id).filter(Boolean))];
+    const ownProfileCache = currentUser?.id ? profileCache[currentUser.id] : null;
     profileCache = {};
+    if (ownProfileCache && currentUser?.id) profileCache[currentUser.id] = ownProfileCache;
     reviewCache = {};
 
     if (sellerIds.length) {
@@ -413,11 +437,15 @@ function renderPosts(postsToRender) {
                         const sellerProfile = sellerId ? profileCache[sellerId] : null;
                         const sellerName = sellerProfile?.display_name || 'โปรไฟล์ผู้ลงประกาศ';
                         const initial = sellerName.charAt(0).toUpperCase();
+                        const avatarUrl = sellerProfile?.avatar_url || '';
+                        const avatarMarkup = avatarUrl
+                            ? `<img src="${escapeHtml(avatarUrl)}" alt="รูปโปรไฟล์" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='${escapeHtml(initial)}';">`
+                            : escapeHtml(initial);
                         const badge = sellerProfile?.role === 'seller' ? '🟢 KKU Verified Seller' : '👤 โปรไฟล์ผู้ใช้';
                         return sellerId ? `
                     <button onclick="openSellerProfile('${sellerId}')" class="flex items-center gap-2 text-left min-w-0 hover:opacity-80 transition group">
-                        <div class="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center text-xs font-bold text-orange-400 border border-slate-700 shrink-0">
-                            ${escapeHtml(initial)}
+                        <div class="w-9 h-9 rounded-full bg-orange-500/10 overflow-hidden flex items-center justify-center text-xs font-bold text-orange-400 border border-slate-700 shrink-0">
+                            ${avatarMarkup}
                         </div>
                         <div class="min-w-0">
                             <span class="text-[10px] text-slate-500 block">ผู้ลงประกาศ</span>
@@ -570,12 +598,16 @@ function filterCategory(category) {
     const btnTable = document.getElementById('btn-table');
     const btnTicket = document.getElementById('btn-ticket');
 
-    const activeClass = "tab-btn bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs sm:text-sm px-4 py-2 rounded-xl font-medium shadow-md transition";
     const inactiveClass = "tab-btn bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm px-4 py-2 rounded-xl border border-slate-700 transition";
 
-    if (btnAll) btnAll.className = category === 'all' ? activeClass : inactiveClass;
-    if (btnTable) btnTable.className = category === 'table' ? activeClass : inactiveClass;
-    if (btnTicket) btnTicket.className = category === 'ticket' ? activeClass : inactiveClass;
+    [btnAll, btnTable, btnTicket].forEach(btn => {
+        if (!btn) return;
+        btn.className = inactiveClass;
+        btn.classList.remove('active');
+    });
+
+    const activeBtn = category === 'all' ? btnAll : category === 'table' ? btnTable : btnTicket;
+    if (activeBtn) activeBtn.classList.add('active');
 
     if (category === 'all') renderPosts(allPosts);
     else if (category === 'table') renderPosts(allPosts.filter(p => p.type === 'table' || p.type === 'โต๊ะร้านอาหาร/ร้านเหล้า' || p.type === 'โต๊ะร้านอาหาร'));
@@ -654,10 +686,22 @@ async function openMyProfile() {
     if (!currentUser) return openAuthModal('login');
     if (!_supabase) return alert('ยังไม่ได้เชื่อมต่อ Supabase');
 
-    // สร้าง cache ของตัวเองจากข้อมูลที่ใช้แสดงบน navbar ก่อน
-    // เพื่อให้ปุ่ม "โปรไฟล์" ด้านบนเปิดได้แม้ profile ยังไม่ถูกโหลดเข้า cache
-    if (!profileCache[currentUser.id]) {
-        profileCache[currentUser.id] = {
+    // ดึงข้อมูล profile จริงจาก Supabase ทุกครั้งที่เปิดโปรไฟล์ตัวเอง
+    // เพื่อป้องกัน cache ว่าง/ข้อมูลเก่าหลังรีเฟรชหน้า
+    const { data: profile, error } = await _supabase
+        .from('profiles')
+        .select('id, display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+    if (error) {
+        console.error('openMyProfile profile error:', error);
+        return alert('โหลดโปรไฟล์ไม่สำเร็จ: ' + error.message);
+    }
+
+    // บัญชีเก่าที่ไม่มี row ใน profiles ให้สร้างจากข้อมูลผู้ใช้
+    if (!profile) {
+        const fallbackProfile = {
             id: currentUser.id,
             display_name: currentUser.name || 'ผู้ใช้',
             role: currentUser.role || 'buyer',
@@ -668,6 +712,21 @@ async function openMyProfile() {
             line_id: '',
             phone: ''
         };
+
+        const { data: createdProfile, error: createError } = await _supabase
+            .from('profiles')
+            .upsert(fallbackProfile, { onConflict: 'id' })
+            .select('id, display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
+            .maybeSingle();
+
+        if (createError) {
+            console.error('openMyProfile create profile error:', createError);
+            return alert('สร้างโปรไฟล์ไม่สำเร็จ: ' + createError.message);
+        }
+
+        profileCache[currentUser.id] = createdProfile || fallbackProfile;
+    } else {
+        profileCache[currentUser.id] = profile;
     }
 
     await openSellerProfile(currentUser.id);
@@ -727,11 +786,14 @@ async function openSellerProfile(sellerId) {
 
     const isKkuSeller = profile.role === 'seller';
     const initials = (profile.display_name || 'U').charAt(0).toUpperCase();
+    const avatarHtml = profile.avatar_url
+        ? `<img src="${escapeHtml(profile.avatar_url)}" alt="รูปโปรไฟล์" class="w-full h-full object-cover">`
+        : `<span>${initials}</span>`;
 
     document.getElementById('profileModalContent').innerHTML = `
         <div class="flex items-start gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl font-bold text-amber-400 shrink-0">
-                ${initials}
+            <div class="relative w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-2xl font-bold text-amber-400 shrink-0">
+                ${avatarHtml}
             </div>
             <div class="min-w-0 flex-1">
                 <h2 class="text-xl font-bold text-white truncate">${escapeHtml(profile.display_name || 'ผู้ใช้')}</h2>
@@ -762,6 +824,18 @@ async function openSellerProfile(sellerId) {
             <button id="editProfileBtn" onclick="toggleProfileEdit()" class="w-full border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs py-2.5 rounded-xl transition">✏️ แก้ไขโปรไฟล์</button>
             <div id="editProfilePanel" class="hidden mt-3 p-4 rounded-xl bg-slate-950/70 border border-slate-800">
                 <h3 class="text-sm font-bold text-white">แก้ไขข้อมูลโปรไฟล์</h3>
+                <div class="flex items-center gap-3 mt-3">
+                    <div id="avatarPreview" class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center text-xl font-bold text-amber-400">
+                        ${avatarHtml}
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-[11px] text-slate-400 mb-1">รูปโปรไฟล์</label>
+                        <input id="profileAvatarFile" type="file" accept="image/png,image/jpeg,image/webp"
+                            onchange="previewAvatarFile(this)"
+                            class="block w-full text-xs text-slate-300 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-500 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-slate-950">
+                        <p class="text-[10px] text-slate-500 mt-1">JPG, PNG หรือ WEBP • ไม่เกิน 5MB</p>
+                    </div>
+                </div>
                 <label class="block text-[11px] text-slate-400 mt-3 mb-1">ชื่อที่แสดง</label>
                 <input id="editProfileName" value="${escapeHtml(profile.display_name || '')}" maxlength="80" placeholder="ชื่อที่แสดง"
                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
@@ -850,6 +924,35 @@ function toggleProfileEdit(force) {
     if (btn) btn.textContent = show ? '✕ ปิดการแก้ไข' : '✏️ แก้ไขโปรไฟล์';
 }
 
+async function uploadProfileAvatar(file) {
+    if (!file) return null;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        throw new Error('รองรับเฉพาะ JPG, PNG หรือ WEBP');
+    }
+    if (file.size > 5 * 1024 * 1024) throw new Error('รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5MB');
+
+    const ext = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = `${currentUser.id}/avatar-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await _supabase.storage
+        .from('avatars')
+        .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = _supabase.storage.from('avatars').getPublicUrl(path);
+    if (!data?.publicUrl) throw new Error('สร้าง URL รูปโปรไฟล์ไม่สำเร็จ');
+    return data.publicUrl;
+}
+
+function previewAvatarFile(input) {
+    const file = input?.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return alert('รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5MB');
+    const preview = document.getElementById('avatarPreview');
+    if (preview) preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="ตัวอย่างรูป" class="w-full h-full object-cover">`;
+}
+
 async function saveMyProfile() {
     if (!currentUser || !_supabase) return;
     const display_name = document.getElementById('editProfileName')?.value.trim();
@@ -858,28 +961,48 @@ async function saveMyProfile() {
     const facebook = document.getElementById('editProfileFacebook')?.value.trim();
     const line_id = document.getElementById('editProfileLine')?.value.trim();
     const phone = document.getElementById('editProfilePhone')?.value.trim();
+    const avatarFile = document.getElementById('profileAvatarFile')?.files?.[0];
 
     if (!display_name) return alert('กรุณากรอกชื่อที่แสดง');
 
-    const { error } = await _supabase
-        .from('profiles')
-        .update({ display_name, bio, instagram, facebook, line_id, phone })
-        .eq('id', currentUser.id);
+    const saveBtn = document.querySelector('#editProfilePanel button[onclick="saveMyProfile()"]');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'กำลังบันทึก...'; }
 
-    if (error) return alert('บันทึกโปรไฟล์ไม่สำเร็จ: ' + error.message);
+    try {
+        let avatar_url = profileCache[currentUser.id]?.avatar_url || '';
+        if (avatarFile) avatar_url = await uploadProfileAvatar(avatarFile);
 
-    currentUser.name = display_name;
-    if (profileCache[currentUser.id]) {
-        profileCache[currentUser.id].display_name = display_name;
-        profileCache[currentUser.id].bio = bio;
-        profileCache[currentUser.id].instagram = instagram;
-        profileCache[currentUser.id].facebook = facebook;
-        profileCache[currentUser.id].line_id = line_id;
-        profileCache[currentUser.id].phone = phone;
+        const { error } = await _supabase
+            .from('profiles')
+            .update({ display_name, bio, instagram, facebook, line_id, phone, avatar_url })
+            .eq('id', currentUser.id);
+
+        if (error) throw error;
+
+        currentUser.name = display_name;
+        currentUser.avatar_url = avatar_url;
+        if (!profileCache[currentUser.id]) profileCache[currentUser.id] = { id: currentUser.id };
+        Object.assign(profileCache[currentUser.id], { display_name, bio, instagram, facebook, line_id, phone, avatar_url });
+
+        // ยืนยันข้อมูลจาก DB อีกครั้งก่อนแสดงผล เพื่อให้ refresh แล้วไม่ย้อนกลับ
+        const { data: savedProfile, error: verifyError } = await _supabase
+            .from('profiles')
+            .select('id, display_name, role, bio, avatar_url, instagram, facebook, line_id, phone')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+
+        if (verifyError) throw verifyError;
+        if (savedProfile) profileCache[currentUser.id] = savedProfile;
+
+        updateAuthUI();
+        alert('บันทึกโปรไฟล์เรียบร้อยแล้ว');
+        await openSellerProfile(currentUser.id);
+    } catch (error) {
+        console.error('saveMyProfile avatar error:', error);
+        alert('เปลี่ยนรูป/บันทึกโปรไฟล์ไม่สำเร็จ: ' + (error.message || error));
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'บันทึก'; }
     }
-    updateAuthUI();
-    alert('บันทึกโปรไฟล์เรียบร้อยแล้ว');
-    await openSellerProfile(currentUser.id);
 }
 
 function selectReviewRating(rating) {
